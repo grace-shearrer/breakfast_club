@@ -41,25 +41,22 @@ RUN git clone https://github.com/neurolabusc/dcm2niix.git && \
     cd /tmp && rm -rf dcm2niix
 
 #-------------
-# Install ANTS
+# Install PyNets
 #-------------
-# USER root
-# RUN apt-get update -qq && apt-get install -yq --no-install-recommends \
-#        build-essential && \
-#    apt-get clean && \
-#    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-# USER $NB_USER
-# WORKDIR /tmp
-# RUN git clone https://github.com/stnava/ANTs.git && \
-#    cd ANTs && \
-#    git checkout 767f756bc0e423cd503a24c806b6578aaeb5b82f && \
-#    mkdir build && cd build && cmake .. && make && \
-#    mkdir -p /opt/ants && \
-#    cp bin/* /opt/ants && cp ../Scripts/* /opt/ants && \
-#    cd /tmp && rm -rf ANTs
-RUN curl -sSL https://dl.dropbox.com/s/btep51gtglp7kwh/ants.tgz?dl=0 | tar zx -C /
-ENV ANTSPATH=/opt/ants/ \
-    PATH=/opt/ants:$PATH
+USER root
+RUN apt-get update -qq && apt-get install -yq --no-install-recommends \
+       build-essential && \
+   apt-get clean && \
+   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+USER $NB_USER
+WORKDIR /tmp
+RUN git clone https://github.com/dpisner453/PyNets.git && \
+   cd PyNets/ && \
+   pip install -r requirements.txt && \
+   mkdir -p /opt/bin && cp PyNets /opt/bin/ && \
+    cd /tmp && rm -rf PyNets
+
+
 
 #------------
 # Install c3d
@@ -123,60 +120,6 @@ RUN echo "destinationFolder=/opt/mcr" > mcr_options.txt && \
     matlab_installer/install -inputFile /opt/mcr_options.txt && \
     rm -rf matlab_installer mcr_options.txt
 
-#------------
-# Install SPM
-#------------
-user $NB_USER
-RUN curl -sSL http://www.fil.ion.ucl.ac.uk/spm/download/restricted/utopia/dev/spm12_latest_Linux_R2017a.zip -o spm12.zip && \
-    unzip spm12.zip && \
-    rm -rf spm12.zip
-
-ENV MATLABCMD="/opt/mcr/v92/toolbox/matlab" \
-    SPMMCRCMD="/opt/spm12/run_spm12.sh /opt/mcr/v92/ script" \
-    FORCE_SPMMCR=1 \
-    LD_LIBRARY_PATH=/opt/mcr/v92/runtime/glnxa64:/opt/mcr/v92/bin/glnxa64:/opt/mcr/v92/sys/os/glnxa64:$LD_LIBRARY_PATH
-
-#-------------
-# Install afni
-#-------------
-USER root
-RUN apt-get update -qq && apt-get install -yq --no-install-recommends \
-        libxp6 && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-USER $NB_USER
-WORKDIR /opt
-RUN curl -sSLO https://afni.nimh.nih.gov/pub/dist/tgz/linux_openmp_64.tgz && \
-    tar zxf linux_openmp_64.tgz && rm linux_openmp_64.tgz && \
-    mv linux_openmp_64 afni
-ENV AFNI_MODELPATH=/opt/afni/ \
-    AFNI_IMSAVE_WARNINGS=NO \
-    AFNI_TTATLAS_DATASET=/opt/afni \
-    AFNI_PLUGINPATH=/opt/afni \
-    PATH=/opt/afni:$PATH
-
-#-------------------
-# Install mindboggle
-#-------------------
-USER root
-RUN apt-get update -qq && apt-get install -yq --no-install-recommends \
-        build-essential libsm-dev libx11-dev libxt-dev libxext-dev && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-USER $NB_USER
-RUN conda install --quiet --yes cmake && \
-    conda clean -tipsy
-WORKDIR /tmp
-RUN git clone https://github.com/nipy/mindboggle && \
-    cd mindboggle && git checkout cb37b8fa3b2bd1b272cb932e7f15c3ec110cb5d7 && \
-    python setup.py install && \
-    mkdir /opt/mindboggle && mkdir /opt/mindboggle/vtk_cpp_tools && \
-    cd /opt/mindboggle/vtk_cpp_tools && \
-    cmake /tmp/mindboggle/vtk_cpp_tools -DCMAKE_EXE_LINKER_FLAGS="-L /opt/conda/lib" && \
-    make && cd .. && rm -rf /tmp/mindboggle && \
-    curl -sSL https://osf.io/rh9km/?action=download\&version=2 -o templates.zip && \
-    unzip templates.zip && rm -rf templates.zip __MACOSX
-ENV vtk_cpp_tools=/opt/mindboggle/vtk_cpp_tools
 
 #-------------
 # Install PALM
